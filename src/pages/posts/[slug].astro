@@ -1,0 +1,47 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getAllPosts, postMeta } from "../../lib/wp.js";
+import type { WPPost } from "../../lib/wp.js";
+
+interface Props {
+  post: WPPost;
+}
+
+// One page per post, generated at build time.
+export async function getStaticPaths() {
+  const posts = await getAllPosts();
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { image, imageAlt, author, date } = postMeta(post);
+const plainTitle = post.title.rendered.replace(/<[^>]+>/g, "");
+---
+<Layout title={plainTitle}>
+  <p><a href="/">Back to all posts</a></p>
+
+  <article>
+    <h1 set:html={post.title.rendered} />
+    <p class="meta">{date}{author && `, by ${author}`}</p>
+    {image && <img class="hero" src={image} alt={imageAlt} />}
+    <div class="content" set:html={post.content.rendered} />
+  </article>
+</Layout>
+
+<style>
+  h1 { font-size: 2.25rem; line-height: 1.2; margin: 1rem 0 0.5rem; }
+  .meta { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.5rem; }
+  .hero { margin-bottom: 1.5rem; }
+  .content :global(figure) { margin: 1.5rem 0; }
+  .content :global(blockquote) {
+    margin: 1.5rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid var(--line);
+    color: var(--muted);
+  }
+  .content :global(pre) { overflow-x: auto; padding: 1rem; border: 1px solid var(--line); }
+  .content :global(iframe) { max-width: 100%; }
+</style>
